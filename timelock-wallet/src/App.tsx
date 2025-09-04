@@ -5,6 +5,8 @@ import { Toaster } from './components/ui/toaster'
 import { Header } from './components/header'
 import { HomePage } from './pages/home'
 import { LocksPage } from './pages/locks'
+import { WalletBalance } from './components/WalletBalance'
+
 import './index.css'
 
 function App() {
@@ -13,6 +15,8 @@ function App() {
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
         <Header />
         <main className="container mx-auto px-4 py-8">
+                    <WalletBalance />
+
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/locks" element={<LocksPage />} />

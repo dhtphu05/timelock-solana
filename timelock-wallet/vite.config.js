@@ -1,9 +1,11 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import path from 'path'
 
 export default defineConfig({
-  plugins: [react(),
+  plugins: [
+    react(),
     nodePolyfills({
       protocolImports: true,
     })
@@ -22,6 +24,6 @@ export default defineConfig({
     global: 'globalThis',
   },
   optimizeDeps: {
-    include: ['@coral-xyz/anchor', 'bn.js']
+    include: ['@coral-xyz/anchor', 'bn.js', 'buffer']
   }
 })
