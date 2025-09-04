@@ -1,7 +1,8 @@
+// filepath: /Users/mac/Desktop/Blockchain/Bounty/timelock/programs/timelock/src/lib.rs
 use anchor_lang::prelude::*;
 use anchor_lang::system_program;
 
-declare_id!("3D5gEEqdbwqgVucJYCWYArmyEjkpKKLVbQB5qLc83gFC");
+declare_id!("HFamjVWTqbLba9TL3Yr2cx19y38RHHsFHRRBXk53wAVy");
 
 #[program]
 pub mod timelock {
@@ -92,7 +93,7 @@ pub struct InitializeLock<'info> {
         ],
         bump,
         payer = owner,
-        space = 8 + Vault::INIT_SPACE
+        space = 8 + 32 + 32 + 8 + 8 + 1
     )]
     pub vault: Account<'info, Vault>,
     pub system_program: Program<'info, System>,
@@ -120,10 +121,9 @@ pub struct Withdraw<'info> {
 }
 
 #[account]
-#[derive(InitSpace)]
 pub struct Vault {
     pub owner: Pubkey,
-    pub recipient: Pubkey,
+    pub recipient: Pubkey,  
     pub amount: u64,
     pub unlock_ts: i64,
     pub is_initialized: bool,
