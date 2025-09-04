@@ -4,7 +4,6 @@ import { WalletModalProvider } from '@solana/wallet-adapter-react-ui'
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom'
 import { SolflareWalletAdapter } from '@solana/wallet-adapter-solflare'
 import { BackpackWalletAdapter } from '@solana/wallet-adapter-backpack'
-import { clusterApiUrl } from '@solana/web3.js'
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base'
 
 import '@solana/wallet-adapter-react-ui/styles.css'
@@ -14,56 +13,31 @@ interface WalletProviderProps {
 }
 
 export function WalletProvider({ children }: WalletProviderProps) {
-  console.log('WalletProvider rendering...') // Debug log
-  
-  const network = WalletAdapterNetwork.Devnet
-  const endpoint = useMemo(() => clusterApiUrl(network), [network])
+  // Use localnet for development
+  const endpoint = 'http://localhost:8899'
   
   const wallets = useMemo(
     () => [
-      // Phantom với cấu hình tốt hơn
-      new PhantomWalletAdapter({
-        network,
-        options: {
-          appMetadata: {
-            name: 'TimeVault',
-            url: window.location.origin,
-          },
-        },
-      }),
-      // Solflare
-      new SolflareWalletAdapter({ network }),
-      // Backpack
+      new PhantomWalletAdapter(),
+      new SolflareWalletAdapter({ network: WalletAdapterNetwork.Devnet }),
       new BackpackWalletAdapter(),
     ],
-    [network]
+    []
   )
 
-  try {
-    return (
-      <ConnectionProvider 
-        endpoint={endpoint}
-        config={{
-          commitment: 'processed',
-          wsEndpoint: endpoint.replace('https://', 'wss://').replace('http://', 'ws://'),
+  return (
+    <ConnectionProvider endpoint={endpoint}>
+      <SolanaWalletProvider 
+        wallets={wallets} 
+        autoConnect={false}
+        onError={(error) => {
+          console.error('Wallet error:', error)
         }}
       >
-        <SolanaWalletProvider 
-          wallets={wallets} 
-          autoConnect={false}
-          localStorageKey="timelock-wallet"
-          onError={(error) => {
-            console.error('Wallet error:', error)
-          }}
-        >
-          <WalletModalProvider>
-            {children}
-          </WalletModalProvider>
-        </SolanaWalletProvider>
-      </ConnectionProvider>
-    )
-  } catch (error) {
-    console.error('WalletProvider error:', error)
-    return <div className="text-white p-4">Wallet Provider Error: {String(error)}</div>
-  }
+        <WalletModalProvider>
+          {children}
+        </WalletModalProvider>
+      </SolanaWalletProvider>
+    </ConnectionProvider>
+  )
 }

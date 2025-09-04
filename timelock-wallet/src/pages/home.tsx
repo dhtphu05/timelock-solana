@@ -1,11 +1,34 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
-import { CustomWalletButton } from '../components/custom-wallet-button'
-import { Lock, Shield, Timer, Wallet } from 'lucide-react'
+import { Lock, Shield, Timer, Wallet, RefreshCw } from 'lucide-react'
+import { TimelockForm } from '../components/TimelockForm'
+import { VaultCard } from '../components/VaultCard'
+import { useTimelockProgram, VaultInfo } from '../hooks/useTimelockProgram'
 
 export function HomePage() {
   const { connected } = useWallet()
+  const { fetchAllVaults } = useTimelockProgram()
+  const [vaults, setVaults] = useState<VaultInfo[]>([])
+  const [loading, setLoading] = useState(false)
+
+  const loadVaults = async () => {
+    if (!connected) return
+    
+    setLoading(true)
+    try {
+      const userVaults = await fetchAllVaults()
+      setVaults(userVaults)
+    } catch (error) {
+      console.error('Error loading vaults:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadVaults()
+  }, [connected])
 
   const features = [
     {
@@ -37,15 +60,7 @@ export function HomePage() {
             Create time-locked vaults to secure your SOL until a future date.
             Perfect for savings, grants, or scheduled payments.
           </p>
-          
-          {/* Custom wallet buttons */}
-          <div className="mb-4">
-            <CustomWalletButton />
-          </div>
-          
-          {/* Fallback to standard button */}
-          <div className="text-white/60 text-sm mb-4">or</div>
-          <WalletMultiButton className="!bg-blue-600 hover:!bg-blue-700" />
+          <WalletMultiButton className="!bg-gradient-to-r !from-blue-600 !to-purple-600 hover:!from-blue-700 hover:!to-purple-700" />
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
@@ -65,43 +80,55 @@ export function HomePage() {
 
   return (
     <div className="grid lg:grid-cols-2 gap-8">
+      {/* Create Timelock Form */}
       <div className="glass rounded-lg p-6">
         <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
           <Lock className="w-6 h-6" />
           Create Time Lock
         </h2>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-white/80 text-sm mb-2">Amount (SOL)</label>
-            <input 
-              type="number" 
-              step="0.001"
-              className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white"
-              placeholder="0.1"
-            />
-          </div>
-          <div>
-            <label className="block text-white/80 text-sm mb-2">Unlock Date</label>
-            <input 
-              type="datetime-local" 
-              className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white"
-            />
-          </div>
-          <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors">
-            Create Time Lock
-          </button>
-        </div>
+        <TimelockForm onSuccess={loadVaults} />
       </div>
       
+      {/* Vault List */}
       <div className="glass rounded-lg p-6">
-        <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-          <Timer className="w-6 h-6" />
-          Your Vaults (0)
-        </h2>
-        <div className="text-center py-8 text-white/60">
-          <Timer className="w-12 h-12 mx-auto mb-4 opacity-50" />
-          <p>No locked vaults yet.</p>
-          <p className="text-sm">Create your first time lock!</p>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+            <Timer className="w-6 h-6" />
+            Your Vaults ({vaults.length})
+          </h2>
+          <button
+            onClick={loadVaults}
+            disabled={loading}
+            className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors disabled:opacity-50"
+            title="Refresh vaults"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+
+        <div className="max-h-96 overflow-y-auto">
+          {loading ? (
+            <div className="text-center py-8 text-white/60">
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-white border-t-transparent mx-auto mb-4" />
+              <p>Loading your vaults...</p>
+            </div>
+          ) : vaults.length === 0 ? (
+            <div className="text-center py-8 text-white/60">
+              <Timer className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>No locked vaults yet.</p>
+              <p className="text-sm">Create your first time lock!</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {vaults.map((vault, index) => (
+                <VaultCard
+                  key={vault.address.toString()}
+                  vault={vault}
+                  onWithdraw={loadVaults}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
